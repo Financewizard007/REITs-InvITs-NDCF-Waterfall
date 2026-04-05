@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NDCF Waterfall Calculator — India REITs & InvITs</title>
+<meta name="description" content="Calculate NDCF waterfall for Indian REITs and InvITs. From EBITDA to DPU step by step."/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#f9f7f4; --bg2:#f2efe9; --card:#ffffff; --border:#e8e2d9;
+  --text:#1a1612; --muted:#7a7068; --dim:#b0a898;
+  --reit:#0f5c4e; --reit2:#1a8a72; --reit-light:rgba(15,92,78,0.08);
+  --invit:#5c3d0f; --invit2:#8a5c1a; --invit-light:rgba(92,61,15,0.08);
+  --gold:#c9973a; --red:#c0392b; --green:#1a7a5e; --amber:#b8860b; --blue:#1a4a7a;
+  --shadow:0 4px 24px rgba(26,22,18,0.08); --shadow-lg:0 12px 48px rgba(26,22,18,0.14);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;line-height:1.6;}
+
+/* ── HEADER ── */
+header{background:var(--text);color:var(--bg);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:200;}
+.logo{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;}
+.logo span{color:var(--gold);font-style:italic;}
+.header-right{display:flex;align-items:center;gap:20px;}
+.header-tag{font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(249,247,244,0.35);}
+
+/* ── PAGE TABS ── */
+.page-tabs{background:var(--text);border-bottom:1px solid rgba(255,255,255,0.08);display:flex;justify-content:center;gap:0;}
+.page-tab{padding:0 32px;height:48px;border:none;background:transparent;color:rgba(249,247,244,0.45);font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:500;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:7px;position:relative;}
+.page-tab:hover{color:rgba(249,247,244,0.75);}
+.page-tab.active{color:var(--gold);font-weight:600;}
+.page-tab.active::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--gold);border-radius:2px 2px 0 0;}
+.page-section{display:none;}
+.page-section.active{display:block;}
+
+/* ── HERO ── */
+.hero{background:var(--text);color:var(--bg);padding:40px 32px 36px;position:relative;overflow:hidden;}
+.hero::before{content:'NDCF';position:absolute;right:-10px;top:-10px;font-family:'Playfair Display',serif;font-size:160px;font-weight:900;color:rgba(255,255,255,0.025);pointer-events:none;line-height:1;}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:700;line-height:1.1;letter-spacing:-0.02em;margin-bottom:10px;max-width:600px;}
+.hero h1 em{color:var(--gold);font-style:italic;}
+.hero p{color:rgba(249,247,244,0.55);font-size:0.88rem;max-width:520px;font-weight:300;line-height:1.7;margin-bottom:24px;}
+.hero-stats{display:flex;gap:28px;flex-wrap:wrap;}
+.hero-stat-val{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:var(--gold);line-height:1;}
+.hero-stat-lbl{font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(249,247,244,0.35);margin-top:3px;}
+
+/* ── INVESTOR BANNER ── */
+.investor-banner{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 32px;}
+.investor-banner-inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
+.banner-item{display:flex;align-items:center;gap:7px;font-size:0.75rem;color:var(--muted);}
+.banner-item strong{color:var(--text);font-weight:600;}
+.banner-sep{color:var(--dim);font-size:0.7rem;}
+
+/* ── MAIN LAYOUT ── */
+.main{max-width:1280px;margin:0 auto;padding:28px 32px 60px;display:grid;grid-template-columns:380px 1fr;gap:28px;align-items:start;}
+
+/* ── MODE TOGGLE ── */
+.mode-toggle{display:flex;gap:0;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;background:var(--card);margin-bottom:20px;}
+.mode-btn{flex:1;padding:11px;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:500;cursor:pointer;transition:all 0.2s;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;}
+.mode-btn.active-reit{background:var(--reit);color:white;font-weight:600;}
+.mode-btn.active-invit{background:var(--invit);color:white;font-weight:600;}
+.mode-btn:not(.active-reit):not(.active-invit):hover{background:var(--bg2);}
+
+/* ── PRESETS ── */
+.presets-label{font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;}
+.presets{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:20px;}
+.preset-btn{padding:5px 11px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-family:'DM Sans',sans-serif;font-size:0.7rem;font-weight:500;cursor:pointer;transition:all 0.2s;color:var(--muted);}
+.preset-btn:hover{border-color:var(--text);color:var(--text);}
+.preset-btn.active{background:var(--text);color:var(--bg);border-color:var(--text);}
+
+/* ── INPUT CARD ── */
+.input-card{background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:24px;box-shadow:var(--shadow);}
+.input-section-title{font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;margin-top:20px;padding-top:18px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.input-section-title:first-child{margin-top:0;padding-top:0;border-top:none;}
+.input-section-title .dot{width:6px;height:6px;border-radius:50%;}
+.input-row{margin-bottom:13px;}
+.input-label{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
+.input-label-text{font-size:0.76rem;font-weight:500;color:var(--text);}
+.input-label-hint{font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--dim);}
+.input-wrap{position:relative;display:flex;align-items:center;}
+.input-wrap input{width:100%;padding:8px 42px 8px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:0.85rem;font-weight:500;color:var(--text);background:var(--bg);outline:none;transition:border-color 0.2s;}
+.input-wrap input:focus{border-color:var(--reit);}
+.input-unit{position:absolute;right:11px;font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--dim);pointer-events:none;}
+.input-slider{width:100%;margin-top:5px;-webkit-appearance:none;height:3px;border-radius:2px;background:var(--border);outline:none;cursor:pointer;}
+.input-slider::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--reit);cursor:pointer;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.15);}
+.sensitivity-wrap{margin-top:18px;padding-top:18px;border-top:1px solid var(--border);}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.toggle-label{font-size:0.76rem;font-weight:500;color:var(--text);}
+.toggle{width:36px;height:20px;border-radius:10px;background:var(--border);border:none;cursor:pointer;position:relative;transition:background 0.2s;}
+.toggle.on{background:var(--reit);}
+.toggle::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:white;top:3px;left:3px;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+.toggle.on::after{transform:translateX(16px);}
+.tooltip-wrap{position:relative;display:inline-block;}
+.tooltip-icon{width:14px;height:14px;border-radius:50%;background:var(--border);color:var(--muted);font-size:0.58rem;display:inline-flex;align-items:center;justify-content:center;cursor:help;font-weight:700;margin-left:4px;}
+.tooltip-box{position:absolute;bottom:120%;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);font-size:0.68rem;padding:8px 12px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity 0.2s;z-index:10;max-width:220px;white-space:normal;line-height:1.5;text-align:left;box-shadow:var(--shadow-lg);}
+.tooltip-wrap:hover .tooltip-box{opacity:1;}
+
+/* ── RIGHT PANEL ── */
+.right-panel{}
+
+/* ── INVESTOR METRICS (top of right panel) ── */
+.investor-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px;}
+.inv-metric{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.inv-metric::before{content:attr(data-icon);position:absolute;right:-4px;bottom:-4px;font-size:2.8rem;opacity:0.07;pointer-events:none;}
+.inv-metric-label{font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;}
+.inv-metric-value{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:700;line-height:1;margin-bottom:4px;}
+.inv-metric-sub{font-size:0.68rem;color:var(--muted);font-weight:300;}
+.inv-metric-badge{display:inline-block;font-size:0.6rem;font-family:'DM Mono',monospace;padding:2px 8px;border-radius:20px;margin-top:6px;font-weight:600;}
+.inv-metric.good .inv-metric-value{color:var(--green);}
+.inv-metric.warn .inv-metric-value{color:var(--amber);}
+.inv-metric.bad .inv-metric-value{color:var(--red);}
+.inv-metric.neutral .inv-metric-value{color:var(--text);}
+.inv-metric.good .inv-metric-badge{background:rgba(26,122,94,0.1);color:var(--green);}
+.inv-metric.warn .inv-metric-badge{background:rgba(184,134,11,0.1);color:var(--amber);}
+.inv-metric.bad .inv-metric-badge{background:rgba(192,57,43,0.1);color:var(--red);}
+
+/* ── WATERFALL CARD ── */
+.waterfall-card{background:var(--card);border:1.5px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:20px;}
+.waterfall-header{background:var(--text);color:var(--bg);padding:18px 24px;display:flex;justify-content:space-between;align-items:center;}
+.waterfall-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;}
+.waterfall-subtitle{font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(249,247,244,0.35);margin-top:2px;}
+.dpu-display{text-align:right;}
+.dpu-val{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:700;color:var(--gold);line-height:1;}
+.dpu-lbl{font-family:'DM Mono',monospace;font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(249,247,244,0.35);margin-top:3px;}
+
+/* ── WATERFALL STEPS ── */
+.waterfall-steps{padding:0;}
+.wf-step{display:flex;align-items:center;padding:13px 24px;border-bottom:1px solid var(--border);gap:14px;transition:background 0.15s;position:relative;}
+.wf-step:last-child{border-bottom:none;}
+.wf-step:hover{background:var(--bg);}
+.wf-step.highlight{background:var(--reit-light);border-left:3px solid var(--reit);}
+.wf-step.highlight-invit{background:var(--invit-light);border-left:3px solid var(--invit);}
+.wf-step.deduct{background:rgba(192,57,43,0.03);}
+.wf-step.final{background:var(--text);color:var(--bg);}
+.wf-step.section-header{background:var(--bg2);padding:7px 24px;}
+.wf-step-num{font-family:'DM Mono',monospace;font-size:0.58rem;color:var(--dim);width:18px;flex-shrink:0;}
+.wf-step.section-header .wf-step-num{display:none;}
+.wf-bar-wrap{flex:1;min-width:0;}
+.wf-step-name{font-size:0.8rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.wf-step.section-header .wf-step-name{font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);font-weight:600;}
+.wf-step.final .wf-step-name{font-family:'Playfair Display',serif;font-size:0.92rem;font-weight:700;color:var(--bg);}
+.wf-bar{height:3px;border-radius:2px;margin-top:4px;transition:width 0.5s cubic-bezier(0.16,1,0.3,1);}
+.wf-step-desc{font-size:0.66rem;color:var(--muted);margin-top:2px;font-weight:300;}
+.wf-step.final .wf-step-desc{color:rgba(249,247,244,0.4);}
+.wf-values{text-align:right;flex-shrink:0;min-width:110px;}
+.wf-amount{font-family:'DM Mono',monospace;font-size:0.85rem;font-weight:500;color:var(--text);}
+.wf-step.deduct .wf-amount{color:var(--red);}
+.wf-step.final .wf-amount{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;color:var(--gold);}
+.wf-pct{font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--dim);margin-top:2px;}
+.wf-step.final .wf-pct{color:rgba(249,247,244,0.35);}
+
+/* ── QUICK INTERPRETATION BOX ── */
+.interpretation-card{background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:20px 24px;margin-bottom:20px;box-shadow:var(--shadow);}
+.interp-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.interp-icon{font-size:1.5rem;}
+.interp-title{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;}
+.interp-verdict{font-size:0.7rem;font-family:'DM Mono',monospace;padding:2px 10px;border-radius:20px;font-weight:600;}
+.interp-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.interp-item{background:var(--bg2);border-radius:10px;padding:12px 14px;}
+.interp-item-label{font-size:0.62rem;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;color:var(--dim);margin-bottom:4px;}
+.interp-item-val{font-size:0.82rem;font-weight:600;color:var(--text);line-height:1.3;}
+.interp-item-note{font-size:0.68rem;color:var(--muted);margin-top:2px;font-weight:300;}
+.interp-insight{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:0.78rem;color:var(--muted);line-height:1.7;font-weight:300;}
+.interp-insight strong{color:var(--text);font-weight:600;}
+
+/* ── SENSITIVITY ── */
+.sensitivity-card{background:var(--card);border:1.5px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:20px;display:none;}
+.sensitivity-card.show{display:block;}
+.sensitivity-header{padding:16px 24px;border-bottom:1px solid var(--border);}
+.sensitivity-title{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;}
+.sensitivity-subtitle{font-size:0.7rem;color:var(--muted);font-weight:300;margin-top:2px;}
+.sensitivity-table{width:100%;border-collapse:collapse;font-size:0.76rem;}
+.sensitivity-table th{padding:9px 14px;background:var(--bg2);font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:right;border-bottom:1px solid var(--border);}
+.sensitivity-table th:first-child{text-align:left;}
+.sensitivity-table td{padding:9px 14px;border-bottom:1px solid var(--border);text-align:right;font-family:'DM Mono',monospace;font-size:0.75rem;transition:background 0.1s;}
+.sensitivity-table td:first-child{text-align:left;font-family:'DM Sans',sans-serif;font-size:0.75rem;font-weight:500;color:var(--muted);}
+.sensitivity-table tr:last-child td{border-bottom:none;}
+.sensitivity-table tr:hover td{background:var(--bg);}
+.sensitivity-table .base-row td{background:var(--reit-light);font-weight:600;}
+.sensitivity-table .base-row td:first-child{color:var(--reit);}
+.cell-good{color:var(--green);}
+.cell-warn{color:var(--amber);}
+.cell-bad{color:var(--red);}
+
+/* ── SHARE BAR ── */
+.share-bar{display:flex;gap:8px;margin-bottom:20px;}
+.share-btn{flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);font-family:'DM Sans',sans-serif;font-size:0.76rem;font-weight:600;cursor:pointer;transition:all 0.2s;color:var(--text);display:flex;align-items:center;justify-content:center;gap:6px;}
+.share-btn:hover{border-color:var(--text);background:var(--text);color:var(--bg);}
+.share-btn.primary{background:var(--reit);border-color:var(--reit);color:white;}
+.share-btn.primary:hover{background:var(--reit2);}
+
+/* ── FORMULA LEGEND ── */
+.formula-card{background:var(--bg2);border:1.5px solid var(--border);border-radius:16px;padding:20px 24px;margin-bottom:20px;}
+.formula-title{font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;}
+.formula-steps{display:flex;flex-direction:column;gap:7px;}
+.formula-step{display:flex;align-items:flex-start;gap:10px;font-size:0.76rem;}
+.formula-op{font-family:'DM Mono',monospace;font-size:0.78rem;font-weight:600;width:18px;flex-shrink:0;color:var(--muted);margin-top:1px;}
+.formula-op.minus{color:var(--red);}
+.formula-op.equals{color:var(--reit);}
+.formula-name{font-weight:500;color:var(--text);}
+.formula-desc{color:var(--muted);font-weight:300;font-size:0.7rem;margin-top:1px;}
+
+/* ── FOOTER ── */
+footer{background:var(--text);color:rgba(249,247,244,0.35);text-align:center;padding:22px;font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;}
+footer a{color:var(--gold);text-decoration:none;}
+
+@media(max-width:1024px){.main{grid-template-columns:1fr;}.investor-metrics{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:640px){header{padding:0 16px;}.hero{padding:28px 16px;}.main{padding:16px 16px 40px;}.investor-metrics{grid-template-columns:repeat(2,1fr);}.wf-step{padding:10px 14px;}.waterfall-header{padding:14px 16px;}.interp-grid{grid-template-columns:1fr;}.page-tab{padding:0 18px;font-size:0.78rem;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">NDCF <span>Waterfall</span></div>
+  <div class="header-right">
+    <div class="header-tag">India REITs & InvITs</div>
+  </div>
+</header>
+
+<!-- PAGE TABS -->
+<div class="page-tabs">
+  <button class="page-tab active" id="ptab-calculator" onclick="switchPage('calculator')">
+    ⚡ Calculator
+  </button>
+  <button class="page-tab" id="ptab-structure" onclick="switchPage('structure')">
+    🏛️ Structure Guide
+  </button>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- PAGE 1: CALCULATOR -->
+<!-- ══════════════════════════════════════════ -->
+<div class="page-section active" id="page-calculator">
+
+<!-- HERO -->
+<div class="hero">
+  <h1>From EBITDA to <em>Distribution.</em><br/>Every Step. Explained.</h1>
+  <p>The only free tool that calculates the complete NDCF waterfall for Indian REITs and InvITs — the way institutional investors model it.</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-val">90%</div>
+      <div class="hero-stat-lbl">Min NDCF Distribution</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">7</div>
+      <div class="hero-stat-lbl">Waterfall Steps</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">SEBI</div>
+      <div class="hero-stat-lbl">REIT/InvIT Regs 2014</div>
+    </div>
+  </div>
+</div>
+
+<!-- INVESTOR QUICK-READ BANNER -->
+<div class="investor-banner">
+  <div class="investor-banner-inner">
+    <div class="banner-item">📖 <strong>How to use:</strong> Select a trust preset or enter custom numbers — see DPU update instantly</div>
+    <span class="banner-sep">·</span>
+    <div class="banner-item">💡 <strong>Key insight:</strong> NDCF ≠ EBITDA — amortisation + capex reduce what reaches you</div>
+    <span class="banner-sep">·</span>
+    <div class="banner-item">⚠️ <strong>SEBI rule:</strong> Minimum 90% of NDCF must be distributed quarterly</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- LEFT: INPUTS -->
+<!-- LEFT: INPUTS -->
+  <div class="left-panel">
+    <!-- Mode Toggle -->
+    <div class="mode-toggle">
+      <button class="mode-btn active-reit" id="btn-reit" onclick="setMode('reit')">🏢 REIT</button>
+      <button class="mode-btn" id="btn-invit" onclick="setMode('invit')">🛣️ InvIT</button>
+    </div>
+
+    <!-- Presets -->
+    <div class="presets-label">Load Example</div>
+    <div class="presets" id="presets"></div>
+
+    <div class="input-card">
+      <!-- P&L Inputs -->
+      <div class="input-section-title">
+        <span class="dot" style="background:var(--reit)"></span>
+        Income Statement
+      </div>
+
+      <div class="input-row">
+        <div class="input-label">
+          <span class="input-label-text">Gross Revenue
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon">?</span>
+              <span class="tooltip-box">Total rental income + CAM charges + other operating income from the trust's assets</span>
+            </span>
+          </span>
+          <span class="input-label-hint">₹ Cr</span>
+        </div>
+        <div class="input-wrap">
+          <input type="number" id="revenue" value="3800" min="0" step="50" oninput="calculate()"/>
+          <span class="input-unit">Cr</span>
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div class="input-label">
+          <span class="input-label-text">Operating Expenses
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon">?</span>
+              <span class="tooltip-box">Property management, maintenance, admin expenses. Typically 18-25% of revenue for office REITs.</span>
+            </span>
+          </span>
+          <span class="input-label-hint">₹ Cr</span>
+        </div>
+        <div class="input-wrap">
+          <input type="number" id="opex" value="684" min="0" step="10" oninput="calculate()"/>
+          <span class="input-unit">Cr</span>
+        </div>
+        <input type="range" class="input-slider" id="opex-slider" min="5" max="40" value="18" oninput="syncOpex(this.value)" style="margin-top:6px"/>
+        <div style="display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--dim);margin-top:2px"><span>5%</span><span id="opex-pct">18%</span><span>40%</span></div>
+      </div>
+
+      <!-- Debt Inputs -->
+      <div class="input-section-title">
+        <span class="dot" style="background:var(--red)"></span>
+        Debt & Interest
+      </div>
+
+      <div class="input-row">
+        <div class="input-label">
+          <span class="input-label-text">Total Debt
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon">?</span>
+              <span class="tooltip-box">Outstanding borrowings. SEBI caps InvIT leverage at 70% of AUM (or 49% for listed debt). REIT cap is 49% of AUM.</span>
+            </span>
+          </span>
+          <span class="input-label-hint">₹ Cr</span>
+        </div>
+        <div class="input-wrap">
+          <input type="number" id="debt" value="8200" min="0" step="100" oninput="calculate()"/>
+          <span class="input-unit">Cr</span>
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div class="input-label">
+          <span class="input-label-text">Interest Rate
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon">?</span>
+              <span class="tooltip-box">Weighted average cost of debt. Office REITs typically borrow at 7.5-9% in India.</span>
+            </span>
+          </span>
+          <span class="input-label-hint">% p.a.</span>
+        </div>
+        <div class="input-wrap">
+          <input type="number" id="interest-rate" value="8.2" min="0" max="20" step="0.1" oninput="calculate()"/>
+          <span class="input-unit">%</span>
+        </div>
+        <input type="range" class="input-slider" id="rate-slider" min="5" max="15" value="8.2" step="0.1" oninput="syncRate(this.value)"/>
+      </div>
+
+      <div class="input-row">
+        <div class="input-label">
+          <span class="input-label-text">Scheduled Amortisation
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon">?</span>
+              <span class="tooltip-box">Mandatory principal repayment per year. Reduces NDCF — key difference from EBITDA-based analysis.</span>
+            </span>
+          </span>
+          <span class="input-label-hint">₹ Cr</span>
+        </div>
+        <div class="input-wrap">
+          <input type="number" id="amort" value="350" min="0" step="25" oninput="calculate()"/>
+          <span class="input-unit">Cr</span>
+        </div>
+      </div>
+
+      <!-- Asset Inputs -->
+      <div class="input-section-title">
+        <span class="dot" style="background:var(--gold)"></span>
+        Asset & Capital
+      </div>
+
+      <div class="input-row">
+        <div class="input-label">
+          <span class="input-label-text">Asset AUM / GAV
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon">?</span>
+              <span class="tooltip-box">Gross Asset Value of all assets under the trust. Used to calculate leverage ratios and SEBI compliance.</span>
+            </span>
+          </span>
+          <span class="input-label-hint">₹ Cr</span>
+        </div>
+        <div class="input-wrap">
+          <input type="number" id="aum" value="42000" min="1000" step="500" oninput="calculate()"/>
+          <span class="input-unit">Cr</span>
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div class="input-label">
+          <span class="input-label-text">Maintenance Capex
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon">?</span>
+              <span class="tooltip-box">Capital expenditure to maintain existing assets (not growth capex). Deducted from NDCF under SEBI regulations.</span>
+            </span>
+          </span>
+          <span class="input-label-hint">₹ Cr</span>
+        </div>
+        <div class="input-wrap">
+          <input type="number" id="capex" value="95" min="0" step="5" oninput="calculate()"/>
+          <span class="input-unit">Cr</span>
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div class="input-label">
+          <span class="input-label-text">Working Capital Changes
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon">?</span>
+              <span class="tooltip-box">Net change in working capital. Positive = WC released (increases NDCF). Negative = WC consumed (decreases NDCF).</span>
+            </span>
+          </span>
+          <span class="input-label-hint">₹ Cr</span>
+        </div>
+        <div class="input-wrap">
+          <input type="number" id="wcap" value="45" step="5" oninput="calculate()"/>
+          <span class="input-unit">Cr</span>
+        </div>
+      </div>
+
+      <!-- Units -->
+      <div class="input-section-title">
+        <span class="dot" style="background:var(--blue)"></span>
+        Unit Details
+      </div>
+
+      <div class="input-row">
+        <div class="input-label">
+          <span class="input-label-text">Units Outstanding</span>
+          <span class="input-label-hint">Crore units</span>
+        </div>
+        <div class="input-wrap">
+          <input type="number" id="units" value="77.25" min="0.01" step="0.25" oninput="calculate()"/>
+          <span class="input-unit">Cr</span>
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div class="input-label">
+          <span class="input-label-text">Distribution Payout %
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon">?</span>
+              <span class="tooltip-box">SEBI mandates minimum 90% of NDCF to be distributed. Most trusts distribute 95-100%.</span>
+            </span>
+          </span>
+          <span class="input-label-hint">%</span>
+        </div>
+        <div class="input-wrap">
+          <input type="number" id="payout" value="97" min="90" max="100" step="1" oninput="calculate()"/>
+          <span class="input-unit">%</span>
+        </div>
+        <input type="range" class="input-slider" id="payout-slider" min="90" max="100" value="97" oninput="syncPayout(this.value)"/>
+        <div style="display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--dim);margin-top:2px">
+          <span>90% (min)</span><span>100%</span>
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div class="input-label">
+          <span class="input-label-text">Unit Price (CMP)</span>
+          <span class="input-label-hint">₹ / unit</span>
+        </div>
+        <div class="input-wrap">
+          <input type="number" id="price" value="385" min="1" step="5" oninput="calculate()"/>
+          <span class="input-unit">₹</span>
+        </div>
+      </div>
+
+      <!-- Sensitivity Toggle -->
+      <div class="sensitivity-wrap">
+        <div class="toggle-row">
+          <span class="toggle-label">Sensitivity Analysis</span>
+          <button class="toggle" id="sens-toggle" onclick="toggleSensitivity()"></button>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted);font-weight:300">
+          Show DPU impact across interest rate and occupancy scenarios
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+
+  <!-- RIGHT: OUTPUT -->
+  <div class="right-panel">
+
+    <!-- INVESTOR METRICS -->
+    <div class="investor-metrics" id="metrics-grid"></div>
+
+    <!-- WATERFALL -->
+    <div class="waterfall-card">
+      <div class="waterfall-header">
+        <div>
+          <div class="waterfall-title">NDCF Waterfall</div>
+          <div class="waterfall-subtitle" id="wf-subtitle">REIT — SEBI Regulations 2014</div>
+        </div>
+        <div class="dpu-display">
+          <div class="dpu-val" id="dpu-display">₹0.00</div>
+          <div class="dpu-lbl">DPU / Unit / Year</div>
+        </div>
+      </div>
+      <div class="waterfall-steps" id="waterfall-steps"></div>
+    </div>
+
+    <!-- QUICK INTERPRETATION -->
+    <div class="interpretation-card" id="interpretation-card"></div>
+
+    <!-- SENSITIVITY -->
+    <div class="sensitivity-card" id="sensitivity-card">
+      <div class="sensitivity-header">
+        <div class="sensitivity-title">Sensitivity Analysis</div>
+        <div class="sensitivity-subtitle">DPU (₹/unit/year) — interest rate × occupancy scenarios</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="sensitivity-table" id="sensitivity-table"></table>
+      </div>
+    </div>
+
+    <!-- SHARE -->
+    <div class="share-bar">
+      <button class="share-btn primary" onclick="shareWA()">💬 Share on WhatsApp</button>
+      <button class="share-btn" onclick="copyLink()">🔗 Copy Summary</button>
+    </div>
+
+    <!-- FORMULA LEGEND -->
+    <div class="formula-card">
+      <div class="formula-title">NDCF Formula — SEBI Regulations</div>
+      <div class="formula-steps">
+        <div class="formula-step"><span class="formula-op">=</span><div><div class="formula-name">Gross Revenue</div><div class="formula-desc">Rental income + CAM + other operating income</div></div></div>
+        <div class="formula-step"><span class="formula-op minus">−</span><div><div class="formula-name">Operating Expenses</div><div class="formula-desc">Property management, admin, maintenance</div></div></div>
+        <div class="formula-step"><span class="formula-op equals">=</span><div><div class="formula-name">EBITDA</div><div class="formula-desc">Earnings before interest, tax, depreciation</div></div></div>
+        <div class="formula-step"><span class="formula-op minus">−</span><div><div class="formula-name">Interest Expense</div><div class="formula-desc">On all outstanding debt obligations</div></div></div>
+        <div class="formula-step"><span class="formula-op minus">−</span><div><div class="formula-name">Scheduled Amortisation</div><div class="formula-desc">Mandatory principal repayment — key NDCF deduction vs EBITDA</div></div></div>
+        <div class="formula-step"><span class="formula-op minus">−</span><div><div class="formula-name">Maintenance Capex</div><div class="formula-desc">Capex to maintain existing assets</div></div></div>
+        <div class="formula-step"><span class="formula-op">±</span><div><div class="formula-name">Working Capital Changes</div><div class="formula-desc">Net WC movement in the period</div></div></div>
+        <div class="formula-step"><span class="formula-op equals" style="color:var(--gold)">═</span><div><div class="formula-name" style="color:var(--reit)">NDCF → 90% distributed as DPU</div><div class="formula-desc">Net Distributable Cash Flow — minimum 90% must be distributed</div></div></div>
+      </div>
+    </div>
+
+  </div><!-- end right-panel -->
+</div><!-- end main -->
+
+</div><!-- end page-calculator -->
+
+<!-- ══════════════════════════════════════════ -->
+<!-- PAGE 2: STRUCTURE GUIDE -->
+<!-- ══════════════════════════════════════════ -->
+<div class="page-section" id="page-structure">
+<div style="background:var(--text);padding:64px 40px 80px">
+  <div style="max-width:1280px;margin:0 auto">
+
+    <!-- Section Header -->
+    <div style="text-align:center;margin-bottom:56px">
+      <div style="font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(249,247,244,0.35);margin-bottom:12px">How It Actually Works</div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.8rem,3.5vw,3rem);font-weight:700;color:var(--bg);line-height:1.1;letter-spacing:-0.02em">
+        The <em style="color:var(--gold);font-style:italic">REIT & InvIT</em> Structure<br/>Explained Simply
+      </h2>
+      <p style="color:rgba(249,247,244,0.5);font-size:0.9rem;max-width:540px;margin:14px auto 0;font-weight:300;line-height:1.7">
+        From sponsor to unitholder — every layer of the structure, why it exists, and how cash flows through it.
+      </p>
+    </div>
+
+    <!-- TAB SWITCH -->
+    <div style="display:flex;gap:0;max-width:320px;margin:0 auto 48px;border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;overflow:hidden">
+      <button id="tab-reit" onclick="showTab('reit')"
+        style="flex:1;padding:11px;border:none;background:var(--reit);color:white;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer">
+        🏢 REIT
+      </button>
+      <button id="tab-invit" onclick="showTab('invit')"
+        style="flex:1;padding:11px;border:none;background:transparent;color:rgba(249,247,244,0.5);font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:500;cursor:pointer">
+        🛣️ InvIT
+      </button>
+    </div>
+
+    <!-- REIT CONTENT -->
+    <div id="struct-reit">
+
+      <!-- VISUAL STRUCTURE DIAGRAM -->
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:40px;margin-bottom:48px;overflow-x:auto">
+        <div style="min-width:600px">
+
+          <!-- Row 1: Unitholders -->
+          <div style="display:flex;justify-content:center;margin-bottom:0">
+            <div style="background:rgba(201,151,58,0.15);border:1.5px solid var(--gold);border-radius:12px;padding:14px 28px;text-align:center;min-width:200px">
+              <div style="font-size:1.4rem;margin-bottom:4px">👤👤👤</div>
+              <div style="font-family:'DM Sans',sans-serif;font-weight:600;color:var(--gold);font-size:0.88rem">Unit Holders</div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.62rem;color:rgba(249,247,244,0.4);margin-top:2px">Public · Institutional · FII</div>
+            </div>
+          </div>
+
+          <!-- Arrow down -->
+          <div style="display:flex;justify-content:center;align-items:center;height:48px;position:relative">
+            <div style="width:1.5px;height:100%;background:rgba(255,255,255,0.15)"></div>
+            <div style="position:absolute;font-size:0.62rem;font-family:'DM Mono',monospace;color:var(--gold);background:var(--text);padding:2px 8px;white-space:nowrap">
+              ← DPU (₹/unit/qtr) &nbsp;&nbsp; Capital (₹) →
+            </div>
+          </div>
+
+          <!-- Row 2: REIT Trust -->
+          <div style="display:flex;justify-content:center;margin-bottom:0">
+            <div style="background:rgba(15,92,78,0.2);border:2px solid var(--reit2);border-radius:12px;padding:16px 36px;text-align:center;min-width:280px;position:relative">
+              <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--reit2);color:white;font-size:0.6rem;font-family:'DM Mono',monospace;letter-spacing:0.1em;padding:2px 12px;border-radius:20px;white-space:nowrap">SEBI REGULATED TRUST</div>
+              <div style="font-size:1.5rem;margin-bottom:4px">🏛️</div>
+              <div style="font-family:'Playfair Display',serif;font-weight:700;color:var(--bg);font-size:1rem">REIT Trust</div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.62rem;color:rgba(249,247,244,0.4);margin-top:2px">Trustee (SEBI Registered) · holds assets</div>
+              <div style="display:flex;gap:10px;justify-content:center;margin-top:10px;flex-wrap:wrap">
+                <span style="font-size:0.66rem;background:rgba(15,92,78,0.3);color:var(--reit2);padding:2px 8px;border-radius:20px;font-family:'DM Mono',monospace">Min 80% in income assets</span>
+                <span style="font-size:0.66rem;background:rgba(201,151,58,0.2);color:var(--gold);padding:2px 8px;border-radius:20px;font-family:'DM Mono',monospace">90% NDCF distributed</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Arrow down with labels -->
+          <div style="display:flex;justify-content:center;align-items:center;height:48px;position:relative">
+            <div style="width:1.5px;height:100%;background:rgba(255,255,255,0.15)"></div>
+            <div style="position:absolute;font-size:0.62rem;font-family:'DM Mono',monospace;color:rgba(249,247,244,0.35);background:var(--text);padding:2px 8px;white-space:nowrap">
+              owns via SPVs
+            </div>
+          </div>
+
+          <!-- Row 3: SPVs -->
+          <div style="display:flex;justify-content:center;gap:16px;margin-bottom:0;flex-wrap:wrap">
+            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 18px;text-align:center;min-width:140px">
+              <div style="font-size:0.9rem;margin-bottom:3px">🏢 Office Park A</div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.58rem;color:rgba(249,247,244,0.3)">SPV 1 · Pvt Ltd</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 18px;text-align:center;min-width:140px">
+              <div style="font-size:0.9rem;margin-bottom:3px">🏢 Office Park B</div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.58rem;color:rgba(249,247,244,0.3)">SPV 2 · Pvt Ltd</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 18px;text-align:center;min-width:140px">
+              <div style="font-size:0.9rem;margin-bottom:3px">🏢 Office Park C</div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.58rem;color:rgba(249,247,244,0.3)">SPV 3 · Pvt Ltd</div>
+            </div>
+          </div>
+
+          <!-- Arrow down -->
+          <div style="display:flex;justify-content:center;align-items:center;height:36px;position:relative">
+            <div style="width:1.5px;height:100%;background:rgba(255,255,255,0.15)"></div>
+            <div style="position:absolute;font-size:0.62rem;font-family:'DM Mono',monospace;color:rgba(249,247,244,0.35);background:var(--text);padding:2px 8px;white-space:nowrap">rental income + CAM</div>
+          </div>
+
+          <!-- Row 4: Tenants -->
+          <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px 16px;text-align:center">
+              <div style="font-size:0.78rem;color:rgba(249,247,244,0.6)">💻 IT/GCC Tenants</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px 16px;text-align:center">
+              <div style="font-size:0.78rem;color:rgba(249,247,244,0.6)">🏦 BFSI Tenants</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px 16px;text-align:center">
+              <div style="font-size:0.78rem;color:rgba(249,247,244,0.6)">🏭 Industrial Tenants</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- KEY PARTIES -->
+      <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(249,247,244,0.35);margin-bottom:20px">Key Parties & Roles</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:48px">
+          <div style="background:rgba(201,151,58,0.15);border:1px solid rgba(201,151,58,0.3);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <span style="font-size:1.4rem">🏛️</span>
+              <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--gold)">Trustee</div>
+            </div>
+            <p style="font-size:0.75rem;color:rgba(249,247,244,0.5);line-height:1.6;margin-bottom:12px;font-weight:300">SEBI-registered, independent trustee (e.g. Axis Trustee). Holds legal title to all assets on behalf of unitholders. Cannot be related to sponsor.</p>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:var(--gold);flex-shrink:0">&#9658;</span>Legal owner of all REIT assets</div><div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:var(--gold);flex-shrink:0">&#9658;</span>Ensures SEBI compliance</div><div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:var(--gold);flex-shrink:0">&#9658;</span>Approves major transactions</div><div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:var(--gold);flex-shrink:0">&#9658;</span>Cannot be sponsor-affiliated</div>
+            </div>
+          </div>
+          <div style="background:rgba(15,92,78,0.15);border:1px solid rgba(15,92,78,0.4);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <span style="font-size:1.4rem">🏗️</span>
+              <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--reit2)">Sponsor</div>
+            </div>
+            <p style="font-size:0.75rem;color:rgba(249,247,244,0.5);line-height:1.6;margin-bottom:12px;font-weight:300">The developer/asset owner who creates the REIT (e.g. Embassy Group, Blackstone, K Raheja Corp). Must retain minimum 15% stake for 3 years.</p>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:var(--reit2);flex-shrink:0">&#9658;</span>Seeds the REIT with initial assets</div><div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:var(--reit2);flex-shrink:0">&#9658;</span>Must hold min 15% units (3yr lock-in)</div><div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:var(--reit2);flex-shrink:0">&#9658;</span>Provides pipeline for future acquisitions</div><div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:var(--reit2);flex-shrink:0">&#9658;</span>Gets ROFO on new assets (usually)</div>
+            </div>
+          </div>
+          <div style="background:rgba(26,74,122,0.15);border:1px solid rgba(26,74,122,0.4);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <span style="font-size:1.4rem">⚙️</span>
+              <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#6096d0">Manager</div>
+            </div>
+            <p style="font-size:0.75rem;color:rgba(249,247,244,0.5);line-height:1.6;margin-bottom:12px;font-weight:300">The investment manager that runs day-to-day operations, makes investment decisions, and manages properties. Earns management fee (~0.5-1% of AUM).</p>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:#6096d0;flex-shrink:0">&#9658;</span>Day-to-day investment decisions</div><div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:#6096d0;flex-shrink:0">&#9658;</span>Leasing, tenant management</div><div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:#6096d0;flex-shrink:0">&#9658;</span>Reports to board + unitholders</div><div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:#6096d0;flex-shrink:0">&#9658;</span>Earns fee — aligns with NDCF growth</div>
+            </div>
+          </div>
+          <div style="background:rgba(120,80,20,0.15);border:1px solid rgba(120,80,20,0.3);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <span style="font-size:1.4rem">🔍</span>
+              <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#c08030">Valuer</div>
+            </div>
+            <p style="font-size:0.75rem;color:rgba(249,247,244,0.5);line-height:1.6;margin-bottom:12px;font-weight:300">SEBI-mandated independent property valuer (e.g. Knight Frank, JLL). Values all assets minimum twice a year. Critical for NAV calculation.</p>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:#c08030;flex-shrink:0">&#9658;</span>Semi-annual independent valuation</div><div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:#c08030;flex-shrink:0">&#9658;</span>Determines NAV per unit</div><div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:#c08030;flex-shrink:0">&#9658;</span>Audited by two separate valuers</div><div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:#c08030;flex-shrink:0">&#9658;</span>Valuation drives price discovery</div>
+            </div>
+          </div>
+          <div style="background:rgba(80,20,120,0.15);border:1px solid rgba(80,20,120,0.3);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <span style="font-size:1.4rem">📋</span>
+              <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#9060c0">SEBI</div>
+            </div>
+            <p style="font-size:0.75rem;color:rgba(249,247,244,0.5);line-height:1.6;margin-bottom:12px;font-weight:300">Securities and Exchange Board of India regulates all Indian REITs under the SEBI (REIT) Regulations 2014.</p>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:#9060c0;flex-shrink:0">&#9658;</span>Approves REIT registration</div><div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:#9060c0;flex-shrink:0">&#9658;</span>Sets leverage limits (49% of AUM)</div><div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:#9060c0;flex-shrink:0">&#9658;</span>Mandates 90% NDCF distribution</div><div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:#9060c0;flex-shrink:0">&#9658;</span>Unitholder consent for major acts</div>
+            </div>
+          </div>
+          <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <span style="font-size:1.4rem">🏢</span>
+              <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:rgba(249,247,244,0.7)">SPV</div>
+            </div>
+            <p style="font-size:0.75rem;color:rgba(249,247,244,0.5);line-height:1.6;margin-bottom:12px;font-weight:300">Special Purpose Vehicles — individual companies that hold each property asset. The REIT holds ≥50% in each SPV. SPVs are the actual landlords.</p>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:rgba(249,247,244,0.7);flex-shrink:0">&#9658;</span>Individual asset ownership entity</div><div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:rgba(249,247,244,0.7);flex-shrink:0">&#9658;</span>REIT holds ≥50% in each SPV</div><div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:rgba(249,247,244,0.7);flex-shrink:0">&#9658;</span>Generates rental income at SPV level</div><div style="display:flex;gap:8px;font-size:0.72rem;color:rgba(249,247,244,0.6)"><span style="color:rgba(249,247,244,0.7);flex-shrink:0">&#9658;</span>NDCF flows up from SPV to REIT</div>
+            </div>
+          </div>
+
+      <!-- SEBI RULES -->
+      <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(249,247,244,0.35);margin-bottom:20px">SEBI Regulatory Framework</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:48px">
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 16px">
+            <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(249,247,244,0.3);margin-bottom:4px">Min Asset Size</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--gold);margin-bottom:2px">₹500 Cr</div>
+            <div style="font-size:0.68rem;color:rgba(249,247,244,0.4);font-weight:300">Minimum REIT size at IPO</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 16px">
+            <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(249,247,244,0.3);margin-bottom:4px">Min IPO Size</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--gold);margin-bottom:2px">₹250 Cr</div>
+            <div style="font-size:0.68rem;color:rgba(249,247,244,0.4);font-weight:300">Minimum public offer value</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 16px">
+            <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(249,247,244,0.3);margin-bottom:4px">Leverage Limit</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--gold);margin-bottom:2px">49% of AUM</div>
+            <div style="font-size:0.68rem;color:rgba(249,247,244,0.4);font-weight:300">Max total debt / asset value</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 16px">
+            <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(249,247,244,0.3);margin-bottom:4px">Mandatory Distribution</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--gold);margin-bottom:2px">90% of NDCF</div>
+            <div style="font-size:0.68rem;color:rgba(249,247,244,0.4);font-weight:300">Per half-year, minimum</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 16px">
+            <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(249,247,244,0.3);margin-bottom:4px">Distribution Frequency</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--gold);margin-bottom:2px">Quarterly</div>
+            <div style="font-size:0.68rem;color:rgba(249,247,244,0.4);font-weight:300">Post FY2024 amendment</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 16px">
+            <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(249,247,244,0.3);margin-bottom:4px">Income-producing Assets</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--gold);margin-bottom:2px">≥80%</div>
+            <div style="font-size:0.68rem;color:rgba(249,247,244,0.4);font-weight:300">Min in completed, rent-paying assets</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 16px">
+            <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(249,247,244,0.3);margin-bottom:4px">Single Asset Limit</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--gold);margin-bottom:2px">≤60%</div>
+            <div style="font-size:0.68rem;color:rgba(249,247,244,0.4);font-weight:300">No single asset > 60% of portfolio</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 16px">
+            <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(249,247,244,0.3);margin-bottom:4px">Sponsor Lock-in</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--gold);margin-bottom:2px">15% for 3 yrs</div>
+            <div style="font-size:0.68rem;color:rgba(249,247,244,0.4);font-weight:300">Skin in the game requirement</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 16px">
+            <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(249,247,244,0.3);margin-bottom:4px">Min Public Float</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--gold);margin-bottom:2px">25%</div>
+            <div style="font-size:0.68rem;color:rgba(249,247,244,0.4);font-weight:300">Public unitholding post-IPO</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 16px">
+            <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(249,247,244,0.3);margin-bottom:4px">Related Party</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--gold);margin-bottom:2px">Unitholder vote</div>
+            <div style="font-size:0.68rem;color:rgba(249,247,244,0.4);font-weight:300">Required for related party transactions</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 16px">
+            <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(249,247,244,0.3);margin-bottom:4px">Asset Valuation</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--gold);margin-bottom:2px">2× per year</div>
+            <div style="font-size:0.68rem;color:rgba(249,247,244,0.4);font-weight:300">By two independent SEBI valuers</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 16px">
+            <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(249,247,244,0.3);margin-bottom:4px">Min Unit Face Value</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--gold);margin-bottom:2px">₹1</div>
+            <div style="font-size:0.68rem;color:rgba(249,247,244,0.4);font-weight:300">Post Jan 2024 reduction from ₹500</div>
+          </div>
+
+      <!-- REIT vs INVIT KEY DIFF -->
+      <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(249,247,244,0.35);margin-bottom:20px">REIT vs InvIT — Key Differences</div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;margin-bottom:48px">
+        <table style="width:100%;border-collapse:collapse;font-size:0.78rem">
+          <thead>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.08)">
+              <th style="padding:12px 20px;text-align:left;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(249,247,244,0.35);font-weight:500">Parameter</th>
+              <th style="padding:12px 20px;text-align:center;color:var(--reit2);font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.08em;font-weight:700">REIT</th>
+              <th style="padding:12px 20px;text-align:center;color:var(--gold);font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.08em;font-weight:700">InvIT</th>
+            </tr>
+          </thead>
+          <tbody>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.02)">
+                <td style="padding:11px 20px;color:rgba(249,247,244,0.5);font-weight:400">Underlying Assets</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">Office, Retail, Warehousing</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">Roads, Power, Gas, Telecom Towers</td>
+              </tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                <td style="padding:11px 20px;color:rgba(249,247,244,0.5);font-weight:400">Revenue Type</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">Rental income (occupancy-linked)</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">Toll / Annuity / Tariff / Lease</td>
+              </tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.02)">
+                <td style="padding:11px 20px;color:rgba(249,247,244,0.5);font-weight:400">Revenue Risk</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">Occupancy + rent risk</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">Varies: traffic / availability / contracted</td>
+              </tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                <td style="padding:11px 20px;color:rgba(249,247,244,0.5);font-weight:400">Leverage Limit (SEBI)</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">49% of AUM</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">49% (listed) · 70% (unlisted debt)</td>
+              </tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.02)">
+                <td style="padding:11px 20px;color:rgba(249,247,244,0.5);font-weight:400">Asset Depreciation</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">Buildings depreciate (offset by capex)</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">Infrastructure often stable or appreciates</td>
+              </tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                <td style="padding:11px 20px;color:rgba(249,247,244,0.5);font-weight:400">Typical Yield</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">6–8%</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">8–12%</td>
+              </tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.02)">
+                <td style="padding:11px 20px;color:rgba(249,247,244,0.5);font-weight:400">Distribution</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">≥90% of NDCF quarterly</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">≥90% of NDCF quarterly</td>
+              </tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                <td style="padding:11px 20px;color:rgba(249,247,244,0.5);font-weight:400">Growth Driver</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">Escalations + acquisitions</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">Traffic growth + tariff revision + acquisitions</td>
+              </tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.02)">
+                <td style="padding:11px 20px;color:rgba(249,247,244,0.5);font-weight:400">Inflation Linkage</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">15% escalation every 3 yrs</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">WPI-linked toll / PPI-linked tariff</td>
+              </tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                <td style="padding:11px 20px;color:rgba(249,247,244,0.5);font-weight:400">Tax on Distributions</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">Interest: Slab · Dividend: TDS 10% · Repayment: Tax-free</td>
+                <td style="padding:11px 20px;text-align:center;color:rgba(249,247,244,0.75);font-weight:500">Same as REIT</td>
+              </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- DISTRIBUTION TAXATION -->
+      <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(249,247,244,0.35);margin-bottom:20px">How Distributions Are Taxed</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:16px">
+        <div style="background:rgba(201,151,58,0.15);border:1px solid rgba(201,151,58,0.3);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span style="font-size:1.2rem">💰</span>
+              <div style="font-weight:600;color:var(--gold);font-size:0.85rem">Interest Income</div>
+            </div>
+            <div style="font-family:'DM Mono',monospace;font-size:0.68rem;color:rgba(249,247,244,0.8);background:rgba(0,0,0,0.2);padding:6px 10px;border-radius:6px;margin-bottom:8px">Taxable in investor hands at slab rate</div>
+            <div style="font-size:0.72rem;color:rgba(249,247,244,0.45);line-height:1.5;font-weight:300">Largest component. REIT/InvIT pays TDS at 10% for residents. Most distributions are classified here.</div>
+          </div>
+        <div style="background:rgba(15,92,78,0.15);border:1px solid rgba(15,92,78,0.3);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span style="font-size:1.2rem">📊</span>
+              <div style="font-weight:600;color:var(--reit2);font-size:0.85rem">Dividend Income</div>
+            </div>
+            <div style="font-family:'DM Mono',monospace;font-size:0.68rem;color:rgba(249,247,244,0.8);background:rgba(0,0,0,0.2);padding:6px 10px;border-radius:6px;margin-bottom:8px">Taxable at investor's slab rate + TDS 10%</div>
+            <div style="font-size:0.72rem;color:rgba(249,247,244,0.45);line-height:1.5;font-weight:300">Distributed from SPV dividends. TDS deducted at source. Same treatment as equity dividends.</div>
+          </div>
+        <div style="background:rgba(26,74,122,0.15);border:1px solid rgba(26,74,122,0.3);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span style="font-size:1.2rem">📈</span>
+              <div style="font-weight:600;color:#6096d0;font-size:0.85rem">Capital Gains</div>
+            </div>
+            <div style="font-family:'DM Mono',monospace;font-size:0.68rem;color:rgba(249,247,244,0.8);background:rgba(0,0,0,0.2);padding:6px 10px;border-radius:6px;margin-bottom:8px">STCG 20% (< 12 months) · LTCG 12.5% (> 12 months)</div>
+            <div style="font-size:0.72rem;color:rgba(249,247,244,0.45);line-height:1.5;font-weight:300">On unit sale in secondary market. Same as listed equity. 12-month holding for LTCG.</div>
+          </div>
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span style="font-size:1.2rem">🔄</span>
+              <div style="font-weight:600;color:rgba(249,247,244,0.6);font-size:0.85rem">Return of Capital</div>
+            </div>
+            <div style="font-family:'DM Mono',monospace;font-size:0.68rem;color:rgba(249,247,244,0.8);background:rgba(0,0,0,0.2);padding:6px 10px;border-radius:6px;margin-bottom:8px">Tax-free in investor hands</div>
+            <div style="font-size:0.72rem;color:rgba(249,247,244,0.45);line-height:1.5;font-weight:300">Repayment of principal. Reduces cost of acquisition — taxed as capital gain on eventual unit sale. Most tax-efficient component.</div>
+          </div>
+
+            <div style="background:rgba(201,151,58,0.08);border:1px solid rgba(201,151,58,0.2);border-radius:10px;padding:14px 18px;margin-bottom:48px">
+        <div style="font-size:0.75rem;color:rgba(249,247,244,0.6);line-height:1.6;font-weight:300">
+          ⚠️ <strong style="color:var(--gold)">Tax Note:</strong> Each quarterly distribution from a REIT/InvIT comes with a breakdown of interest, dividend, and return of capital components. The trust issues a certificate showing the split. Tax treatment applies component-wise — not uniformly on the full DPU.
+        </div>
+      </div>
+
+      <!-- NDCF vs EBITDA -->
+      <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(249,247,244,0.35);margin-bottom:20px">Why NDCF ≠ EBITDA — The Most Misunderstood Concept</div>
+      <div style="background:rgba(192,57,43,0.08);border:1.5px solid rgba(192,57,43,0.25);border-radius:14px;padding:28px;margin-bottom:16px">
+        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--bg);margin-bottom:14px">
+          "The distribution yield is 7% based on EBITDA."
+        </div>
+        <div style="font-size:0.78rem;color:rgba(192,57,43,0.8);font-weight:600;margin-bottom:8px">❌ This is wrong. Here's why:</div>
+        <div style="font-size:0.78rem;color:rgba(249,247,244,0.55);line-height:1.8;font-weight:300">
+          EBITDA ignores three major cash outflows that <strong style="color:var(--bg)">must come before</strong> distributions reach unitholders:
+        </div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;gap:12px;background:rgba(0,0,0,0.2);border-radius:8px;padding:12px 14px">
+              <span style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:rgba(192,57,43,0.7);flex-shrink:0">1</span>
+              <div>
+                <div style="font-size:0.8rem;font-weight:600;color:var(--bg);margin-bottom:3px">Scheduled Amortisation</div>
+                <div style="font-size:0.72rem;color:rgba(249,247,244,0.45);line-height:1.5;font-weight:300">Principal repayment is a real cash outflow. A REIT with ₹400 Cr EBITDA and ₹300 Cr annual amortisation has only ₹100 Cr left for distribution — not ₹400 Cr.</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;background:rgba(0,0,0,0.2);border-radius:8px;padding:12px 14px">
+              <span style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:rgba(192,57,43,0.7);flex-shrink:0">2</span>
+              <div>
+                <div style="font-size:0.8rem;font-weight:600;color:var(--bg);margin-bottom:3px">Maintenance Capex</div>
+                <div style="font-size:0.72rem;color:rgba(249,247,244,0.45);line-height:1.5;font-weight:300">Assets need ongoing investment to maintain condition and lease-ability. EBITDA adds back depreciation — but depreciation exists for a reason. Maintenance capex is the cash version.</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;background:rgba(0,0,0,0.2);border-radius:8px;padding:12px 14px">
+              <span style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:rgba(192,57,43,0.7);flex-shrink:0">3</span>
+              <div>
+                <div style="font-size:0.8rem;font-weight:600;color:var(--bg);margin-bottom:3px">Working Capital</div>
+                <div style="font-size:0.72rem;color:rgba(249,247,244,0.45);line-height:1.5;font-weight:300">Security deposits received, advance rent, or WC movements all affect real cash available. EBITDA ignores these entirely.</div>
+              </div>
+            </div>
+        </div>
+      </div>
+      <div style="background:rgba(15,92,78,0.12);border:1.5px solid rgba(15,92,78,0.3);border-radius:14px;padding:20px;margin-bottom:48px">
+        <div style="font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:700;color:var(--reit2);margin-bottom:8px">✓ Always use NDCF — not EBITDA — to evaluate REIT/InvIT distributions.</div>
+        <div style="font-size:0.75rem;color:rgba(249,247,244,0.5);line-height:1.6;font-weight:300">
+          The NDCF Waterfall above shows exactly how much of EBITDA actually reaches unitholders after every mandatory deduction. Use the calculator to stress-test any trust before investing.
+        </div>
+      </div>
+
+    </div><!-- end struct-reit -->
+
+    <!-- INVIT CONTENT (hidden by default) -->
+    <div id="struct-invit" style="display:none">
+
+      <!-- VISUAL STRUCTURE DIAGRAM -->
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:40px;margin-bottom:48px;overflow-x:auto">
+        <div style="min-width:600px">
+          <div style="display:flex;justify-content:center;margin-bottom:0">
+            <div style="background:rgba(201,151,58,0.15);border:1.5px solid var(--gold);border-radius:12px;padding:14px 28px;text-align:center;min-width:200px">
+              <div style="font-size:1.4rem;margin-bottom:4px">👤👤👤</div>
+              <div style="font-family:'DM Sans',sans-serif;font-weight:600;color:var(--gold);font-size:0.88rem">Unit Holders</div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.62rem;color:rgba(249,247,244,0.4);margin-top:2px">Public · Institutional · EPFO · Insurance</div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:center;align-items:center;height:48px;position:relative">
+            <div style="width:1.5px;height:100%;background:rgba(255,255,255,0.15)"></div>
+            <div style="position:absolute;font-size:0.62rem;font-family:'DM Mono',monospace;color:var(--gold);background:var(--text);padding:2px 8px;white-space:nowrap">
+              ← DPU (₹/unit/qtr) &nbsp;&nbsp; Capital (₹) →
+            </div>
+          </div>
+          <div style="display:flex;justify-content:center;margin-bottom:0">
+            <div style="background:rgba(92,61,15,0.2);border:2px solid var(--invit2);border-radius:12px;padding:16px 36px;text-align:center;min-width:280px;position:relative">
+              <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--invit2);color:white;font-size:0.6rem;font-family:'DM Mono',monospace;letter-spacing:0.1em;padding:2px 12px;border-radius:20px;white-space:nowrap">SEBI REGULATED TRUST</div>
+              <div style="font-size:1.5rem;margin-bottom:4px">🏗️</div>
+              <div style="font-family:'Playfair Display',serif;font-weight:700;color:var(--bg);font-size:1rem">InvIT Trust</div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.62rem;color:rgba(249,247,244,0.4);margin-top:2px">Trustee (SEBI Registered) · holds infrastructure assets</div>
+              <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap">
+                <span style="font-size:0.62rem;background:rgba(92,61,15,0.3);color:var(--invit2);padding:2px 8px;border-radius:20px;font-family:'DM Mono',monospace">Min 80% operational assets</span>
+                <span style="font-size:0.62rem;background:rgba(201,151,58,0.2);color:var(--gold);padding:2px 8px;border-radius:20px;font-family:'DM Mono',monospace">90% NDCF distributed</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:center;align-items:center;height:48px;position:relative">
+            <div style="width:1.5px;height:100%;background:rgba(255,255,255,0.15)"></div>
+            <div style="position:absolute;font-size:0.62rem;font-family:'DM Mono',monospace;color:rgba(249,247,244,0.35);background:var(--text);padding:2px 8px;white-space:nowrap">holds infrastructure project SPVs</div>
+          </div>
+          <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:0">
+            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 14px;text-align:center">
+              <div style="font-size:0.78rem;color:rgba(249,247,244,0.6)">🛣️ Highway SPV</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 14px;text-align:center">
+              <div style="font-size:0.78rem;color:rgba(249,247,244,0.6)">⚡ Transmission SPV</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 14px;text-align:center">
+              <div style="font-size:0.78rem;color:rgba(249,247,244,0.6)">📦 Warehouse SPV</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 14px;text-align:center">
+              <div style="font-size:0.78rem;color:rgba(249,247,244,0.6)">☀️ Solar SPV</div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:center;align-items:center;height:36px;position:relative">
+            <div style="width:1.5px;height:100%;background:rgba(255,255,255,0.15)"></div>
+            <div style="position:absolute;font-size:0.62rem;font-family:'DM Mono',monospace;color:rgba(249,247,244,0.35);background:var(--text);padding:2px 8px;white-space:nowrap">toll / annuity / tariff / lease income</div>
+          </div>
+          <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap">
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:8px 14px">
+              <div style="font-size:0.75rem;color:rgba(249,247,244,0.5)">🚗 Vehicle Users</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:8px 14px">
+              <div style="font-size:0.75rem;color:rgba(249,247,244,0.5)">🏛️ NHAI / Govt</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:8px 14px">
+              <div style="font-size:0.75rem;color:rgba(249,247,244,0.5)">⚡ Discoms</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:8px 14px">
+              <div style="font-size:0.75rem;color:rgba(249,247,244,0.5)">🏭 C&amp;I Consumers</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INVIT ASSET TYPES -->
+      <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(249,247,244,0.35);margin-bottom:20px">InvIT Asset Classes & Revenue Models</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:48px">
+        <div style="background:rgba(201,151,58,0.12);border:1px solid rgba(201,151,58,0.25);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:1.3rem">🛣️</span>
+                <div style="font-weight:600;color:var(--gold);font-size:0.85rem">Highway — Toll</div>
+              </div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--gold);background:rgba(0,0,0,0.2);padding:2px 8px;border-radius:20px">9–12%</div>
+            </div>
+            <div style="font-size:0.72rem;color:rgba(249,247,244,0.6);margin-bottom:6px;line-height:1.5"><strong style="color:rgba(249,247,244,0.7)">Revenue:</strong> Vehicle users pay per trip. Annual WPI-linked revision.</div>
+            <div style="font-size:0.72rem;color:rgba(249,247,244,0.45);margin-bottom:6px;line-height:1.5"><strong style="color:rgba(249,247,244,0.55)">Key Risk:</strong> Traffic volume risk. Economic slowdown = lower toll revenue.</div>
+            <div style="font-size:0.68rem;font-family:'DM Mono',monospace;color:rgba(249,247,244,0.3)">e.g. Cube Highways, Raajmarg InvIT (toll assets)</div>
+          </div>
+        <div style="background:rgba(15,92,78,0.12);border:1px solid rgba(15,92,78,0.3);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:1.3rem">🏛️</span>
+                <div style="font-weight:600;color:var(--reit2);font-size:0.85rem">Highway — Annuity</div>
+              </div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--reit2);background:rgba(0,0,0,0.2);padding:2px 8px;border-radius:20px">7–9%</div>
+            </div>
+            <div style="font-size:0.72rem;color:rgba(249,247,244,0.6);margin-bottom:6px;line-height:1.5"><strong style="color:rgba(249,247,244,0.7)">Revenue:</strong> Govt pays fixed semi-annual annuity regardless of traffic.</div>
+            <div style="font-size:0.72rem;color:rgba(249,247,244,0.45);margin-bottom:6px;line-height:1.5"><strong style="color:rgba(249,247,244,0.55)">Key Risk:</strong> Near-zero — counterparty is NHAI (Govt of India).</div>
+            <div style="font-size:0.68rem;font-family:'DM Mono',monospace;color:rgba(249,247,244,0.3)">e.g. NHIT InvIT, Raajmarg (annuity assets)</div>
+          </div>
+        <div style="background:rgba(26,74,122,0.12);border:1px solid rgba(26,74,122,0.3);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:1.3rem">⚡</span>
+                <div style="font-weight:600;color:#6096d0;font-size:0.85rem">Power Transmission</div>
+              </div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:#6096d0;background:rgba(0,0,0,0.2);padding:2px 8px;border-radius:20px">8–10%</div>
+            </div>
+            <div style="font-size:0.72rem;color:rgba(249,247,244,0.6);margin-bottom:6px;line-height:1.5"><strong style="color:rgba(249,247,244,0.7)">Revenue:</strong> CERC/SERC tariff based on grid availability (not power volume). 99%+ availability = full tariff.</div>
+            <div style="font-size:0.72rem;color:rgba(249,247,244,0.45);margin-bottom:6px;line-height:1.5"><strong style="color:rgba(249,247,244,0.55)">Key Risk:</strong> Near-zero demand risk. Regulatory risk (tariff revision every 5 yrs).</div>
+            <div style="font-size:0.68rem;font-family:'DM Mono',monospace;color:rgba(249,247,244,0.3)">e.g. IndiGrid, PowerGrid InvIT</div>
+          </div>
+        <div style="background:rgba(120,160,40,0.12);border:1px solid rgba(120,160,40,0.25);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:1.3rem">☀️</span>
+                <div style="font-weight:600;color:#80b030;font-size:0.85rem">Renewable Energy</div>
+              </div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:#80b030;background:rgba(0,0,0,0.2);padding:2px 8px;border-radius:20px">7–9%</div>
+            </div>
+            <div style="font-size:0.72rem;color:rgba(249,247,244,0.6);margin-bottom:6px;line-height:1.5"><strong style="color:rgba(249,247,244,0.7)">Revenue:</strong> Long-term PPAs (25 yrs) with state discoms or central agencies at fixed tariff.</div>
+            <div style="font-size:0.72rem;color:rgba(249,247,244,0.45);margin-bottom:6px;line-height:1.5"><strong style="color:rgba(249,247,244,0.55)">Key Risk:</strong> Discom payment delays. Weather/PLF risk.</div>
+            <div style="font-size:0.68rem;font-family:'DM Mono',monospace;color:rgba(249,247,244,0.3)">e.g. SEIT (Mahindra Susten)</div>
+          </div>
+        <div style="background:rgba(200,80,20,0.12);border:1px solid rgba(200,80,20,0.25);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:1.3rem">🔥</span>
+                <div style="font-weight:600;color:#d06020;font-size:0.85rem">Gas Pipeline</div>
+              </div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:#d06020;background:rgba(0,0,0,0.2);padding:2px 8px;border-radius:20px">15–20%</div>
+            </div>
+            <div style="font-size:0.72rem;color:rgba(249,247,244,0.6);margin-bottom:6px;line-height:1.5"><strong style="color:rgba(249,247,244,0.7)">Revenue:</strong> PNGRB regulated tariff + contracted capacity payments (RIL PUA for EIT).</div>
+            <div style="font-size:0.72rem;color:rgba(249,247,244,0.45);margin-bottom:6px;line-height:1.5"><strong style="color:rgba(249,247,244,0.55)">Key Risk:</strong> Volume risk below contracted minimum. Tariff dispute risk.</div>
+            <div style="font-size:0.68rem;font-family:'DM Mono',monospace;color:rgba(249,247,244,0.3)">e.g. Energy Infrastructure Trust (EIT)</div>
+          </div>
+        <div style="background:rgba(120,40,160,0.12);border:1px solid rgba(120,40,160,0.25);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:1.3rem">📡</span>
+                <div style="font-weight:600;color:#9060c0;font-size:0.85rem">Telecom Towers</div>
+              </div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:#9060c0;background:rgba(0,0,0,0.2);padding:2px 8px;border-radius:20px">8–11%</div>
+            </div>
+            <div style="font-size:0.72rem;color:rgba(249,247,244,0.6);margin-bottom:6px;line-height:1.5"><strong style="color:rgba(249,247,244,0.7)">Revenue:</strong> Monthly lease rental per tenancy from telco operators (Jio, Airtel, Vi).</div>
+            <div style="font-size:0.72rem;color:rgba(249,247,244,0.45);margin-bottom:6px;line-height:1.5"><strong style="color:rgba(249,247,244,0.55)">Key Risk:</strong> Tenancy loss if Vi fails. Renewal risk at lease expiry.</div>
+            <div style="font-size:0.68rem;font-family:'DM Mono',monospace;color:rgba(249,247,244,0.3)">e.g. Altius Telecom InvIT, Vertis</div>
+          </div>
+        <div style="background:rgba(40,120,160,0.12);border:1px solid rgba(40,120,160,0.25);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:1.3rem">📦</span>
+                <div style="font-weight:600;color:#3090b0;font-size:0.85rem">Warehousing / Logistics</div>
+              </div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:#3090b0;background:rgba(0,0,0,0.2);padding:2px 8px;border-radius:20px">8–10%</div>
+            </div>
+            <div style="font-size:0.72rem;color:rgba(249,247,244,0.6);margin-bottom:6px;line-height:1.5"><strong style="color:rgba(249,247,244,0.7)">Revenue:</strong> Long-term leases (5–15 yrs) with 3PL, e-commerce, FMCG tenants. Annual escalations.</div>
+            <div style="font-size:0.72rem;color:rgba(249,247,244,0.45);margin-bottom:6px;line-height:1.5"><strong style="color:rgba(249,247,244,0.55)">Key Risk:</strong> Occupancy risk. E-commerce demand concentration.</div>
+            <div style="font-size:0.68rem;font-family:'DM Mono',monospace;color:rgba(249,247,244,0.3)">e.g. NDR InvIT Trust</div>
+          </div>
+
+    </div><!-- end struct-invit -->
+
+  </div>
+</div>
+</div><!-- end page-structure -->
+
+<footer>
+  NDCF Waterfall Calculator · India REITs &amp; InvITs ·
+  <a href="https://financewizard007.github.io/reit-invit-decoded/">REITs &amp; InvITs Decoded</a> ·
+  Not financial advice · Data for educational purposes only
+</footer>
+
+<script>
+// PAGE SWITCHER
+function switchPage(page) {
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('ptab-' + page).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── STRUCTURE TAB SWITCHER (REIT / InvIT) ──
+function showTab(tab) {
+  document.getElementById('struct-reit').style.display = tab === 'reit' ? 'block' : 'none';
+  document.getElementById('struct-invit').style.display = tab === 'invit' ? 'block' : 'none';
+  document.getElementById('tab-reit').style.background = tab === 'reit' ? 'var(--reit)' : 'transparent';
+  document.getElementById('tab-reit').style.color = tab === 'reit' ? 'white' : 'rgba(249,247,244,0.5)';
+  document.getElementById('tab-invit').style.background = tab === 'invit' ? 'var(--invit)' : 'transparent';
+  document.getElementById('tab-invit').style.color = tab === 'invit' ? 'white' : 'rgba(249,247,244,0.5)';
+}
+
+
+</script>
+
+<script>
+
+// ── MAIN CALCULATOR JS ──
+// ═══════════════════════════════════════════════
+// PRESETS
+// ═══════════════════════════════════════════════
+const PRESETS = {
+  reit: [
+    {
+      label: "Embassy REIT", icon: "🏢",
+      revenue: 3800, opex: 684, debt: 8200, interestRate: 8.2,
+      amort: 350, aum: 42000, capex: 95, wcap: 45,
+      units: 77.25, payout: 97, price: 385
+    },
+    {
+      label: "Mindspace REIT", icon: "🏬",
+      revenue: 2100, opex: 378, debt: 4800, interestRate: 8.0,
+      amort: 220, aum: 24000, capex: 55, wcap: 28,
+      units: 57.32, payout: 97, price: 340
+    },
+    {
+      label: "Brookfield REIT", icon: "🌆",
+      revenue: 2200, opex: 418, debt: 6100, interestRate: 8.5,
+      amort: 280, aum: 22000, capex: 60, wcap: 32,
+      units: 37.54, payout: 98, price: 295
+    },
+    {
+      label: "Nexus Select", icon: "🛍️",
+      revenue: 1850, opex: 370, debt: 3200, interestRate: 8.1,
+      amort: 160, aum: 19000, capex: 75, wcap: 22,
+      units: 57.21, payout: 96, price: 142
+    },
+  ],
+  invit: [
+    {
+      label: "IndiGrid", icon: "⚡",
+      revenue: 2800, opex: 420, debt: 9500, interestRate: 8.8,
+      amort: 450, aum: 29300, capex: 120, wcap: 35,
+      units: 92.10, payout: 99, price: 180
+    },
+    {
+      label: "PGInvIT", icon: "🔌",
+      revenue: 620, opex: 93, debt: 180, interestRate: 7.5,
+      amort: 22, aum: 4200, capex: 15, wcap: 8,
+      units: 77.02, payout: 99, price: 105
+    },
+    {
+      label: "NDR InvIT", icon: "📦",
+      revenue: 420, opex: 84, debt: 1800, interestRate: 9.0,
+      amort: 90, aum: 4800, capex: 25, wcap: 12,
+      units: 18.50, payout: 95, price: 110
+    },
+    {
+      label: "Raajmarg InvIT", icon: "🛣️",
+      revenue: 580, opex: 116, debt: 2200, interestRate: 8.6,
+      amort: 110, aum: 6200, capex: 18, wcap: 15,
+      units: 60.00, payout: 97, price: 100
+    },
+  ]
+};
+
+let mode = 'reit';
+let sensitivityOn = false;
+let activePreset = null;
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+function init() {
+  renderPresets();
+  loadPreset(PRESETS.reit[0], 'Embassy REIT');
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-reit').className = 'mode-btn' + (m === 'reit' ? ' active-reit' : '');
+  document.getElementById('btn-invit').className = 'mode-btn' + (m === 'invit' ? ' active-invit' : '');
+  document.getElementById('wf-subtitle').textContent = m === 'reit'
+    ? 'REIT — SEBI Regulations 2014'
+    : 'InvIT — SEBI Regulations 2014';
+  activePreset = null;
+  renderPresets();
+  // Update slider colors
+  document.querySelectorAll('.input-slider').forEach(s => {
+    s.style.accentColor = m === 'reit' ? 'var(--reit)' : 'var(--invit)';
+  });
+  document.querySelectorAll('.input-slider::-webkit-slider-thumb').forEach(s => {
+    s.style.background = m === 'reit' ? 'var(--reit)' : 'var(--invit)';
+  });
+  loadPreset(PRESETS[m][0], PRESETS[m][0].label);
+  calculate();
+}
+
+function renderPresets() {
+  const container = document.getElementById('presets');
+  container.innerHTML = PRESETS[mode].map(p => `
+    <button class="preset-btn ${activePreset === p.label ? 'active' : ''}"
+      onclick="loadPreset(${JSON.stringify(p).replace(/"/g,'&quot;')}, '${p.label}')">
+      ${p.icon} ${p.label}
+    </button>
+  `).join('');
+}
+
+function loadPreset(p, label) {
+  activePreset = label;
+  document.getElementById('revenue').value = p.revenue;
+  document.getElementById('opex').value = p.opex;
+  document.getElementById('debt').value = p.debt;
+  document.getElementById('interest-rate').value = p.interestRate;
+  document.getElementById('amort').value = p.amort;
+  document.getElementById('aum').value = p.aum;
+  document.getElementById('capex').value = p.capex;
+  document.getElementById('wcap').value = p.wcap;
+  document.getElementById('units').value = p.units;
+  document.getElementById('payout').value = p.payout;
+  document.getElementById('price').value = p.price;
+
+  // Sync sliders
+  const opexPct = Math.round((p.opex / p.revenue) * 100);
+  document.getElementById('opex-slider').value = opexPct;
+  document.getElementById('opex-pct').textContent = opexPct + '%';
+  document.getElementById('rate-slider').value = p.interestRate;
+  document.getElementById('payout-slider').value = p.payout;
+
+  renderPresets();
+  calculate();
+}
+
+// ═══════════════════════════════════════════════
+// SYNC FUNCTIONS
+// ═══════════════════════════════════════════════
+function syncOpex(pct) {
+  const rev = parseFloat(document.getElementById('revenue').value) || 0;
+  const val = Math.round(rev * pct / 100);
+  document.getElementById('opex').value = val;
+  document.getElementById('opex-pct').textContent = pct + '%';
+  calculate();
+}
+
+function syncRate(val) {
+  document.getElementById('interest-rate').value = val;
+  calculate();
+}
+
+function syncPayout(val) {
+  document.getElementById('payout').value = val;
+  calculate();
+}
+
+function toggleSensitivity() {
+  sensitivityOn = !sensitivityOn;
+  const toggle = document.getElementById('sens-toggle');
+  toggle.classList.toggle('on', sensitivityOn);
+  document.getElementById('sensitivity-card').classList.toggle('show', sensitivityOn);
+  if (sensitivityOn) calculate();
+}
+
+// ═══════════════════════════════════════════════
+// CORE CALCULATION
+// ═══════════════════════════════════════════════
+function getInputs() {
+  return {
+    revenue: parseFloat(document.getElementById('revenue').value) || 0,
+    opex: parseFloat(document.getElementById('opex').value) || 0,
+    debt: parseFloat(document.getElementById('debt').value) || 0,
+    interestRate: parseFloat(document.getElementById('interest-rate').value) || 0,
+    amort: parseFloat(document.getElementById('amort').value) || 0,
+    aum: parseFloat(document.getElementById('aum').value) || 1,
+    capex: parseFloat(document.getElementById('capex').value) || 0,
+    wcap: parseFloat(document.getElementById('wcap').value) || 0,
+    units: parseFloat(document.getElementById('units').value) || 1,
+    payout: parseFloat(document.getElementById('payout').value) || 90,
+    price: parseFloat(document.getElementById('price').value) || 1,
+  };
+}
+
+function computeWaterfall(inp) {
+  const interest = inp.debt * inp.interestRate / 100;
+  const ebitda = inp.revenue - inp.opex;
+  const ebitdaMargin = inp.revenue > 0 ? (ebitda / inp.revenue) * 100 : 0;
+  const ebt = ebitda - interest;
+  const afterAmort = ebt - inp.amort;
+  const afterCapex = afterAmort - inp.capex;
+  const ndcf = afterCapex + inp.wcap;
+  const distributed = ndcf * inp.payout / 100;
+  const retained = ndcf - distributed;
+  const dpu = inp.units > 0 ? distributed / inp.units : 0;
+  const yieldPct = inp.price > 0 ? (dpu / inp.price) * 100 : 0;
+  const leveragePct = inp.aum > 0 ? (inp.debt / inp.aum) * 100 : 0;
+  const interestCover = interest > 0 ? ebitda / interest : 999;
+  const dcsr = (interest + inp.amort) > 0 ? ebitda / (interest + inp.amort) : 999;
+
+  return {
+    revenue: inp.revenue,
+    opex: inp.opex,
+    ebitda, ebitdaMargin,
+    interest,
+    ebt,
+    amort: inp.amort,
+    afterAmort,
+    capex: inp.capex,
+    afterCapex,
+    wcap: inp.wcap,
+    ndcf,
+    distributed,
+    retained,
+    dpu,
+    yieldPct,
+    leveragePct,
+    interestCover,
+    dcsr,
+    payoutPct: inp.payout,
+    debt: inp.debt,
+    aum: inp.aum,
+  };
+}
+
+function fmt(val, dec=0) {
+  if (Math.abs(val) >= 10000) return '₹' + (val/1000).toFixed(1) + 'L Cr';
+  if (Math.abs(val) >= 1000) return '₹' + val.toFixed(dec) + ' Cr';
+  return '₹' + val.toFixed(dec) + ' Cr';
+}
+
+function fmtN(val, dec=1) {
+  return (val >= 0 ? '' : '−') + '₹' + Math.abs(val).toFixed(dec) + ' Cr';
+}
+
+// ═══════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════
+function calculate() {
+  const inp = getInputs();
+  const w = computeWaterfall(inp);
+  renderMetrics(w, inp);
+  renderWaterfall(w);
+  renderInsight(w, inp);
+  if (sensitivityOn) renderSensitivity(inp, w);
+}
+
+function renderMetrics(w, inp) { renderInterpretation(w, inp);
+  const accentColor = mode === 'reit' ? 'var(--reit)' : 'var(--invit)';
+
+  const leverageLimit = mode === 'reit' ? 49 : 70;
+  const leverageOk = w.leveragePct <= leverageLimit;
+  const leverageWarn = w.leveragePct > leverageLimit * 0.85;
+
+  const metrics = [
+    {
+      label: 'DPU / Year',
+      value: '₹' + w.dpu.toFixed(2),
+      sub: 'Distribution per unit',
+      cls: w.dpu > 0 ? 'good' : 'bad'
+    },
+    {
+      label: 'Distribution Yield',
+      value: w.yieldPct.toFixed(2) + '%',
+      sub: `At CMP ₹${inp.price}`,
+      cls: w.yieldPct >= 7 ? 'good' : w.yieldPct >= 5 ? 'warn' : 'bad'
+    },
+    {
+      label: 'DSCR',
+      value: w.dcsr.toFixed(2) + 'x',
+      sub: 'Debt service coverage',
+      cls: w.dcsr >= 1.5 ? 'good' : w.dcsr >= 1.1 ? 'warn' : 'bad'
+    },
+    {
+      label: 'Leverage',
+      value: w.leveragePct.toFixed(1) + '%',
+      sub: `SEBI limit: ${leverageLimit}% of AUM`,
+      cls: !leverageWarn ? 'good' : !leverageOk ? 'bad' : 'warn'
+    },
+  ];
+
+  document.getElementById('metrics-grid').innerHTML = metrics.map(m => {
+    const badges = {
+      'DPU / Year': m.cls==='good'?'Strong Yield':m.cls==='warn'?'Moderate':'Weak Yield',
+      'Distribution Yield': m.cls==='good'?'Attractive':m.cls==='warn'?'Fair':'Below FD Rate',
+      'DSCR': m.cls==='good'?'Comfortable':m.cls==='warn'?'Adequate':'Stressed',
+      'Leverage': m.cls==='good'?'Low Risk':m.cls==='warn'?'Monitor':'Breach Risk',
+    };
+    const icons = {'DPU / Year':'💰','Distribution Yield':'📈','DSCR':'🛡️','Leverage':'⚖️'};
+    return `<div class="inv-metric ${m.cls}" data-icon="${icons[m.label]||''}">
+      <div class="inv-metric-label">${m.label}</div>
+      <div class="inv-metric-value">${m.value}</div>
+      <div class="inv-metric-sub">${m.sub}</div>
+      <div class="inv-metric-badge">${badges[m.label]||''}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('dpu-display').textContent = '₹' + w.dpu.toFixed(2);
+}
+
+function renderWaterfall(w) {
+  const maxVal = w.revenue;
+  const hlClass = mode === 'reit' ? 'highlight' : 'highlight-invit';
+  const barColor = mode === 'reit' ? 'var(--reit)' : 'var(--invit)';
+
+  const steps = [
+    // Income section
+    { type: 'section', name: 'Income' },
+    {
+      num: '1', name: 'Gross Revenue', amount: w.revenue, pct: 100,
+      desc: 'Total rental income + CAM charges + other operating income',
+      bar: w.revenue / maxVal * 100, barColor: barColor, cls: hlClass
+    },
+    {
+      num: '2', name: 'Operating Expenses', amount: -w.opex, pct: -(w.opex/w.revenue*100),
+      desc: `Property management, admin, maintenance — ${(w.opex/w.revenue*100).toFixed(1)}% of revenue`,
+      bar: w.opex / maxVal * 100, barColor: 'var(--red)', cls: 'deduct'
+    },
+    // EBITDA
+    { type: 'section', name: 'EBITDA' },
+    {
+      num: '3', name: 'EBITDA', amount: w.ebitda, pct: w.ebitdaMargin,
+      desc: `${w.ebitdaMargin.toFixed(1)}% margin — earnings before interest, tax, depreciation`,
+      bar: w.ebitda / maxVal * 100, barColor: barColor, cls: hlClass
+    },
+    // Debt service
+    { type: 'section', name: 'Debt Service' },
+    {
+      num: '4', name: 'Interest Expense', amount: -w.interest, pct: -(w.interest/w.revenue*100),
+      desc: `₹${w.debt.toFixed(0)} Cr debt × ${(w.debt > 0 ? w.interest/w.debt*100 : 0).toFixed(1)}% p.a. — DSCR: ${w.dcsr.toFixed(2)}x`,
+      bar: w.interest / maxVal * 100, barColor: 'var(--red)', cls: 'deduct'
+    },
+    {
+      num: '5', name: 'Scheduled Amortisation', amount: -w.amort, pct: -(w.amort/w.revenue*100),
+      desc: 'Mandatory principal repayment — key NDCF deduction vs pure EBITDA analysis',
+      bar: w.amort / maxVal * 100, barColor: '#e07050', cls: 'deduct'
+    },
+    // Cash adjustments
+    { type: 'section', name: 'Cash Adjustments' },
+    {
+      num: '6', name: 'Maintenance Capex', amount: -w.capex, pct: -(w.capex/w.revenue*100),
+      desc: 'Capex to maintain existing assets — excludes growth/development capex',
+      bar: w.capex / maxVal * 100, barColor: '#c09060', cls: 'deduct'
+    },
+    {
+      num: '7', name: 'Working Capital Changes', amount: w.wcap, pct: (w.wcap/w.revenue*100),
+      desc: w.wcap >= 0 ? 'WC released — positive contribution to NDCF' : 'WC consumed — reduces distributable cash',
+      bar: Math.abs(w.wcap) / maxVal * 100,
+      barColor: w.wcap >= 0 ? 'var(--green)' : 'var(--red)',
+      cls: w.wcap >= 0 ? '' : 'deduct'
+    },
+    // NDCF
+    { type: 'section', name: 'Distribution' },
+    {
+      num: '=', name: 'Net Distributable Cash Flow (NDCF)', amount: w.ndcf, pct: (w.ndcf/w.revenue*100),
+      desc: `${(w.ndcf/w.revenue*100).toFixed(1)}% of revenue reaches NDCF — SEBI mandates 90% distribution`,
+      bar: w.ndcf / maxVal * 100, barColor: barColor, cls: hlClass
+    },
+    {
+      num: '×', name: `Distribution (${w.payoutPct}% of NDCF)`, amount: w.distributed, pct: (w.distributed/w.revenue*100),
+      desc: `₹${w.distributed.toFixed(0)} Cr distributed across ${document.getElementById('units').value} Cr units`,
+      bar: w.distributed / maxVal * 100, barColor: 'var(--gold)', cls: ''
+    },
+    // Final DPU
+    {
+      type: 'final',
+      name: `DPU = ₹${w.dpu.toFixed(2)} / unit / year`,
+      amount: w.dpu,
+      desc: `Yield: ${w.yieldPct.toFixed(2)}% at CMP · Quarterly: ₹${(w.dpu/4).toFixed(2)}/unit`
+    },
+  ];
+
+  document.getElementById('waterfall-steps').innerHTML = steps.map((s, idx) => {
+    if (s.type === 'section') {
+      return `<div class="wf-step section-header"><span class="wf-step-name">${s.name}</span></div>`;
+    }
+    if (s.type === 'final') {
+      return `
+        <div class="wf-step final">
+          <div class="wf-bar-wrap">
+            <div class="wf-step-name">${s.name}</div>
+            <div class="wf-step-desc">${s.desc}</div>
+          </div>
+          <div class="wf-values">
+            <div class="wf-amount">₹${s.amount.toFixed(2)}</div>
+            <div class="wf-pct">per unit · per year</div>
+          </div>
+        </div>`;
+    }
+
+    const barW = Math.max(0, Math.min(100, s.bar || 0));
+    const amtStr = s.amount >= 0 ? fmtN(s.amount) : `(${fmtN(Math.abs(s.amount))})`;
+    const pctStr = s.pct !== undefined ? (s.pct >= 0 ? '+' : '') + s.pct.toFixed(1) + '% of rev' : '';
+
+    return `
+      <div class="wf-step ${s.cls || ''}">
+        <span class="wf-step-num">${s.num}</span>
+        <div class="wf-bar-wrap">
+          <div class="wf-step-name">${s.name}</div>
+          <div class="wf-bar" style="width:${barW}%;background:${s.barColor};opacity:0.7"></div>
+          <div class="wf-step-desc">${s.desc}</div>
+        </div>
+        <div class="wf-values">
+          <div class="wf-amount">${amtStr}</div>
+          <div class="wf-pct">${pctStr}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderInterpretation(w, inp) { renderInsightNew(w, inp); }
+function renderInsight(w, inp) {
+  const leverageLimit = mode === 'reit' ? 49 : 70;
+  const leverageStr = w.leveragePct > leverageLimit
+    ? `<strong>⚠️ Leverage at ${w.leveragePct.toFixed(1)}% exceeds SEBI's ${leverageLimit}% limit for ${mode === 'reit' ? 'REITs' : 'InvITs'}.</strong> This would breach regulations — reduce debt or increase AUM. `
+    : w.leveragePct > leverageLimit * 0.85
+      ? `Leverage at <strong>${w.leveragePct.toFixed(1)}%</strong> is approaching the SEBI ${leverageLimit}% ceiling — limited headroom for further debt-funded acquisitions. `
+      : `Leverage at <strong>${w.leveragePct.toFixed(1)}%</strong> of AUM — within SEBI's ${leverageLimit}% limit with comfortable headroom. `;
+
+  const dscrStr = w.dcsr < 1.1
+    ? `<strong>🚨 DSCR of ${w.dcsr.toFixed(2)}x is dangerously low</strong> — debt service is consuming nearly all EBITDA, leaving thin margin for any revenue shortfall. `
+    : w.dcsr < 1.5
+      ? `DSCR of <strong>${w.dcsr.toFixed(2)}x</strong> is adequate but leaves limited buffer — any occupancy drop or rate increase would stress distributions. `
+      : `DSCR of <strong>${w.dcsr.toFixed(2)}x</strong> indicates strong debt serviceability — EBITDA comfortably covers both interest and amortisation. `;
+
+  const amortImpact = w.amort > 0
+    ? `Amortisation of <strong>₹${w.amort.toFixed(0)} Cr</strong> reduces NDCF by ${(w.amort/w.ebitda*100).toFixed(1)}% vs EBITDA — this is the most commonly misunderstood NDCF deduction among retail investors. `
+    : '';
+
+  const ndcfStr = w.ndcf > 0
+    ? `NDCF of <strong>₹${w.ndcf.toFixed(0)} Cr</strong> (${(w.ndcf/w.revenue*100).toFixed(1)}% of revenue) generates a DPU of <strong>₹${w.dpu.toFixed(2)}/unit</strong> — a <strong>${w.yieldPct.toFixed(2)}% yield</strong> at the current unit price.`
+    : `<strong>🚨 NDCF is negative (₹${w.ndcf.toFixed(0)} Cr)</strong> — the trust cannot distribute anything and is likely drawing down reserves. This is not sustainable.`;
+
+  // insight-card removed — interpretation-card handles this now
+}
+
+function renderSensitivity(inp, base) {
+  const rates = [6.5, 7.0, 7.5, 8.0, inp.interestRate, 9.0, 9.5, 10.0, 10.5];
+  const occupancies = [80, 85, 90, 95, 100];
+
+  // Revenue at different occupancies (proxy)
+  const baseRev = inp.revenue;
+
+  let html = `<thead><tr>
+    <th>Interest Rate →<br/>Occupancy ↓</th>
+    ${rates.map(r => `<th style="${Math.abs(r - inp.interestRate) < 0.01 ? 'color:var(--reit);font-weight:700' : ''}">${r.toFixed(1)}%</th>`).join('')}
+  </tr></thead><tbody>`;
+
+  occupancies.forEach(occ => {
+    const revAdj = baseRev * (occ / 100) / (Math.max(1, occupancies[2]) / 100);
+    const isBaseOcc = Math.abs(occ - 95) < 3;
+    html += `<tr class="${isBaseOcc ? 'base-row' : ''}">
+      <td>${occ}% occ${isBaseOcc ? ' ★' : ''}</td>`;
+
+    rates.forEach(r => {
+      const modInp = { ...inp, revenue: revAdj, interestRate: r };
+      const w = computeWaterfall(modInp);
+      const isBase = Math.abs(r - inp.interestRate) < 0.01 && isBaseOcc;
+      const cls = w.dpu >= base.dpu * 1.05 ? 'cell-good'
+        : w.dpu >= base.dpu * 0.95 ? ''
+        : w.dpu >= base.dpu * 0.8 ? 'cell-warn'
+        : 'cell-bad';
+      html += `<td class="${cls}${isBase ? ' ' : ''}" style="${isBase ? 'font-weight:700' : ''}">
+        ${w.dpu > 0 ? '₹' + w.dpu.toFixed(2) : '—'}
+      </td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody>';
+  document.getElementById('sensitivity-table').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════
+// SHARE
+// ═══════════════════════════════════════════════
+function shareWA() {
+  const inp = getInputs();
+  const w = computeWaterfall(inp);
+  const name = activePreset || (mode === 'reit' ? 'REIT' : 'InvIT');
+  const text = `📊 *${name} — NDCF Waterfall*\n\n` +
+    `Revenue: ₹${inp.revenue} Cr\n` +
+    `EBITDA: ₹${w.ebitda.toFixed(0)} Cr (${w.ebitdaMargin.toFixed(1)}% margin)\n` +
+    `Interest: ₹${w.interest.toFixed(0)} Cr\n` +
+    `Amortisation: ₹${inp.amort} Cr\n` +
+    `NDCF: ₹${w.ndcf.toFixed(0)} Cr\n\n` +
+    `💰 *DPU: ₹${w.dpu.toFixed(2)}/unit/year*\n` +
+    `📈 Yield: ${w.yieldPct.toFixed(2)}% at ₹${inp.price}\n` +
+    `🛡️ DSCR: ${w.dcsr.toFixed(2)}x | Leverage: ${w.leveragePct.toFixed(1)}%\n\n` +
+    `🔗 Try the calculator: financewizard007.github.io/ndcf-calculator\n` +
+    `_Not financial advice_`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+}
+
+function copyLink() {
+  const inp = getInputs();
+  const w = computeWaterfall(inp);
+  const name = activePreset || 'REIT/InvIT';
+  const text = `${name} NDCF Waterfall\n` +
+    `EBITDA: ₹${w.ebitda.toFixed(0)} Cr | Interest: ₹${w.interest.toFixed(0)} Cr | ` +
+    `Amort: ₹${inp.amort} Cr | NDCF: ₹${w.ndcf.toFixed(0)} Cr\n` +
+    `DPU: ₹${w.dpu.toFixed(2)}/unit | Yield: ${w.yieldPct.toFixed(2)}% | DSCR: ${w.dcsr.toFixed(2)}x`;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.share-btn:last-child');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✅ Copied!';
+    setTimeout(() => btn.innerHTML = orig, 2000);
+  });
+}
+
+// Init
+init();
+
+
+function renderInsightNew(w, inp) {
+  const leverageLimit = mode === 'reit' ? 49 : 70;
+  const leverageOk = w.leveragePct <= leverageLimit;
+  const dscrOk = w.dcsr >= 1.5;
+  const yieldOk = w.yieldPct >= 7;
+
+  const verdict = w.ndcf <= 0 ? {label:'⛔ Negative NDCF', cls:'bad'}
+    : w.yieldPct >= 9 ? {label:'🟢 High Yield', cls:'good'}
+    : w.yieldPct >= 7 ? {label:'🟡 Healthy Yield', cls:'warn'}
+    : w.yieldPct >= 5 ? {label:'🟠 Moderate Yield', cls:'warn'}
+    : {label:'🔴 Weak Yield', cls:'bad'};
+
+  const interestCovMsg = w.dcsr >= 2 ? 'Strong — easily covers debt service'
+    : w.dcsr >= 1.5 ? 'Adequate — healthy margin of safety'
+    : w.dcsr >= 1.1 ? 'Tight — limited buffer for revenue dip'
+    : 'Stressed — EBITDA barely covers debt';
+
+  const leverageMsg = !leverageOk ? `⚠️ Exceeds SEBI ${leverageLimit}% limit`
+    : w.leveragePct > leverageLimit * 0.85 ? 'Near SEBI ceiling — watch headroom'
+    : w.leveragePct > 30 ? 'Moderate — within comfortable range'
+    : 'Conservative — ample debt headroom';
+
+  const amortNote = w.amort > 0
+    ? `Amortisation of ₹${w.amort.toFixed(0)} Cr reduces NDCF by ${(w.amort/w.ebitda*100).toFixed(1)}% vs EBITDA`
+    : 'No scheduled amortisation';
+
+  const ndcfConvPct = w.revenue > 0 ? (w.ndcf/w.revenue*100).toFixed(1) : 0;
+  const ebitdaConvPct = w.revenue > 0 ? (w.ebitda/w.revenue*100).toFixed(1) : 0;
+
+  document.getElementById('interpretation-card').innerHTML = `
+    <div class="interp-header">
+      <span class="interp-icon">${w.ndcf <= 0 ? '⛔' : w.yieldPct >= 7 ? '✅' : '⚠️'}</span>
+      <div>
+        <div class="interp-title">Investor Interpretation</div>
+      </div>
+      <div class="interp-verdict" style="background:${verdict.cls==='good'?'rgba(26,122,94,0.1)':verdict.cls==='warn'?'rgba(184,134,11,0.1)':'rgba(192,57,43,0.1)'};color:${verdict.cls==='good'?'var(--green)':verdict.cls==='warn'?'var(--amber)':'var(--red)'}">
+        ${verdict.label}
+      </div>
+    </div>
+    <div class="interp-grid">
+      <div class="interp-item">
+        <div class="interp-item-label">EBITDA Margin</div>
+        <div class="interp-item-val">${w.ebitdaMargin.toFixed(1)}%</div>
+        <div class="interp-item-note">${w.ebitdaMargin >= 70 ? '✓ Excellent — efficient operations' : w.ebitdaMargin >= 55 ? '✓ Healthy margin' : '⚠ Below peer average'}</div>
+      </div>
+      <div class="interp-item">
+        <div class="interp-item-label">NDCF Conversion</div>
+        <div class="interp-item-val">${ndcfConvPct}% of Revenue</div>
+        <div class="interp-item-note">vs EBITDA margin of ${ebitdaConvPct}% — gap = debt service + capex</div>
+      </div>
+      <div class="interp-item">
+        <div class="interp-item-label">Debt Service (DSCR)</div>
+        <div class="interp-item-val">${w.dcsr.toFixed(2)}×</div>
+        <div class="interp-item-note">${interestCovMsg}</div>
+      </div>
+      <div class="interp-item">
+        <div class="interp-item-label">Leverage Risk</div>
+        <div class="interp-item-val">${w.leveragePct.toFixed(1)}%</div>
+        <div class="interp-item-note">${leverageMsg}</div>
+      </div>
+      <div class="interp-item">
+        <div class="interp-item-label">Amortisation Impact</div>
+        <div class="interp-item-val">₹${w.amort.toFixed(0)} Cr</div>
+        <div class="interp-item-note">${amortNote}</div>
+      </div>
+      <div class="interp-item">
+        <div class="interp-item-label">Quarterly DPU</div>
+        <div class="interp-item-val">₹${(w.dpu/4).toFixed(2)}</div>
+        <div class="interp-item-note">Per unit · paid every quarter</div>
+      </div>
+    </div>
+    <div class="interp-insight">
+      ${w.ndcf > 0
+        ? `At ₹${inp.price}/unit, this NDCF generates a <strong>${w.yieldPct.toFixed(2)}% annual yield</strong>. 
+           The trust converts <strong>${ndcfConvPct}% of revenue</strong> into distributable cash — 
+           the ${(w.ebitda/w.revenue*100 - w.ndcf/w.revenue*100).toFixed(1)}% gap between EBITDA and NDCF 
+           is absorbed by interest (₹${w.interest.toFixed(0)} Cr) + amortisation (₹${w.amort.toFixed(0)} Cr) + capex (₹${w.capex.toFixed(0)} Cr). 
+           DSCR of <strong>${w.dcsr.toFixed(2)}×</strong> means EBITDA covers debt service 
+           ${w.dcsr >= 1.5 ? 'comfortably' : w.dcsr >= 1.1 ? 'adequately but tightly' : '— dangerously thin'}.`
+        : `<strong style="color:var(--red)">⚠️ NDCF is negative.</strong> Debt service + capex exceeds EBITDA — the trust cannot distribute anything and would need to draw on reserves or raise capital. Review debt levels urgently.`
+      }
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
